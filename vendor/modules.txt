@@ -42,7 +42,6 @@ github.com/beorn7/perks/quantile
 github.com/blendle/zapdriver
 # github.com/cavaliercoder/grab v1.0.0
 ## explicit
-github.com/cavaliercoder/grab
 # github.com/census-instrumentation/opencensus-proto v0.4.1
 ## explicit; go 1.18
 github.com/census-instrumentation/opencensus-proto/gen-go/agent/common/v1

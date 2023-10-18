@@ -16,12 +16,12 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"regexp"
 	"strings"
 	"text/template"
 
-	"github.com/cavaliercoder/grab"
 	"github.com/google/go-github/v55/github"
 	gh "github.com/google/go-github/v55/github"
 	"gopkg.in/yaml.v2"
@@ -192,15 +192,57 @@ func Detect(cli *CliStruct) (string, error) {
 		return "", err
 	}
 
-	resp1, err := grab.Get(".", "https://github.com/savitaashture/pac-interceptor/blob/main/tknautogenerate.yaml")
-	if err != nil {
-		fmt.Println(err)
-	}
+	//resp1, err := grab.Get(".", "https://github.com/savitaashture/pac-interceptor/blob/main/tknautogenerate.yaml")
+	//if err != nil {
+	//	fmt.Println(err)
+	//}
+	//
+	//fmt.Println("Download saved to", resp1.Filename)
 
-	fmt.Println("Download saved to", resp1.Filename)
+	err = ioutil.WriteFile("tknautogenerate.yaml", []byte(`go:
+  tasks:
+    - name: golangci-lint
+      params:
+      - name: package
+        value: .
+      runAfter: [go-golang-test]
+    - name: golang-test
+      params:
+      - name: package
+        value: .
+      runAfter: [git-clone]
+
+python:
+  tasks:
+    - name: pylint
+      runAfter: [git-clone]
+
+shell:
+  tasks:
+    - name: shellcheck
+      runAfter: [git-clone]
+      workspace:
+        name: shared-workspace
+      params:
+        - name: args
+          value: |
+           ["."]
+
+containerbuild:
+  pattern: "(Docker|Container)file$"
+  tasks:
+    - name: buildah
+      params:
+      - name: IMAGE
+        value: "image-registry.openshift-image-registry.svc:5000/$(context.pipelineRun.namespace)/$(context.pipelineRun.name)"
+`), 0777) //create a new file
+	if err != nil {
+		fmt.Println("filewririirir", err)
+	}
+	fmt.Println("File is created successfully.") //print the success on the console
 
 	ag := &AutoGenerate{ghc: ghC, owner: ownerRepo[0], repo: ownerRepo[1], cli: cli}
-	if err := ag.New(resp1.Filename); err != nil {
+	if err := ag.New("tknautogenerate.yaml"); err != nil {
 		return "", err
 	}
 
