@@ -27,20 +27,23 @@ func main() {
 	log.Println("Attempting to start HTTP Server.")
 	mux := http.NewServeMux()
 	mux.HandleFunc("/pac-interceptor", handleRequest)
-	var err = http.ListenAndServe(":8000", mux)
+	var err = http.ListenAndServe(":8800", mux)
+	fmt.Println("any errorororo here", err)
 	if err != nil {
 		log.Panicln("Server failed starting. Error: %s", err)
 	}
 }
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("its coming in the function")
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
-
+			fmt.Println("inside error if condition", err)
 		}
 	}(r.Body)
 	byteData, err := io.ReadAll(r.Body)
+	fmt.Println("its coming in the function second", string(byteData))
 	if err != nil {
 		handleError(&w, 500, "Internal Server Error", "Error reading data from body", err)
 		return
@@ -163,8 +166,11 @@ func decodeFromBase64(v interface{}, enc string) error {
 }
 
 func clone(payloadData structs.Data, token string) ([]*v1.PipelineRun, error) {
+	fmt.Println("payloadData", payloadData.GithubOrganization, "***************", payloadData.GithubRepository)
+	urlData := fmt.Sprintf("https://github.com/%s/%s", payloadData.GithubOrganization, payloadData.GithubRepository)
+	fmt.Println("URRRRRRRRRRRRRRRR", urlData)
 	repo, err := git.Clone(memory.NewStorage(), nil, &git.CloneOptions{
-		URL: fmt.Sprintf("https://github.com/%s/%s", payloadData.GithubOrganization, payloadData.GithubRepository),
+		URL: urlData,
 		Auth: &githttp.BasicAuth{
 			Username: "abc123", // yes, this can be anything except an empty string
 			Password: token,
@@ -172,6 +178,7 @@ func clone(payloadData structs.Data, token string) ([]*v1.PipelineRun, error) {
 		ReferenceName: plumbing.NewBranchReferenceName(payloadData.HeadBranch),
 		Progress:      os.Stdout,
 	})
+	fmt.Println("errororor in clone", err)
 	if err != nil {
 		return nil, err
 	}
@@ -181,60 +188,68 @@ func clone(payloadData structs.Data, token string) ([]*v1.PipelineRun, error) {
 		return nil, err
 	}
 
+	fmt.Println("refref", ref)
 	// ... retrieving the commit object
 	commit, err := repo.CommitObject(ref.Hash())
 	if err != nil {
 		return nil, err
 	}
 
+	fmt.Println("commit information", commit, err)
 	tree, err := commit.Tree()
 	if err != nil {
 		return nil, err
 	}
 
+	var prs []*v1.PipelineRun
+	fmt.Println("trrrrrrrrrrrrr", tree, "erororor", err)
 	tektontree, err := tree.Tree(".tekton")
 	if err != nil {
-		return nil, err
-	}
-	var prs []*v1.PipelineRun
-	if tektontree != nil {
-		tektontree.Files().ForEach(func(f *object.File) error {
-			if strings.HasSuffix(f.Name, "yaml") {
-				filecontent, err := f.Contents()
-				if err != nil {
-					return err
-				}
-				var p v1.PipelineRun
-				err = yaml.Unmarshal([]byte(filecontent), &p)
-				if err != nil {
-					return err
-				}
-				prs = append(prs, &p)
+		if strings.Contains(err.Error(), "directory not found") {
+			fmt.Println("is it coming herererererrer")
+			// call autogenerate
+			var cliStruct = &autogenerate.CliStruct{
+				OwnerRepo: payloadData.GithubOrganization + "/" + payloadData.GithubRepository,
+				Token:     token,
+				TargetRef: payloadData.BaseBranch,
 			}
-			return nil
-		})
-		for _, pr := range prs {
-			pr.Name = "test-pac-interceptor-" + pr.Name
+			f, err := autogenerate.Detect(cliStruct)
+			if err != nil {
+				return nil, err
+			}
+			fmt.Println("what is the f value", f)
+			marshelledData, err := json.Marshal(f)
+			if err != nil {
+				return nil, err
+			}
+			var prData *v1.PipelineRun
+			json.Unmarshal(marshelledData, prData)
+			prs = append(prs, prData)
+			return prs, nil
 		}
-		return prs, nil
-	}
-	// call autogenerate
-	var cliStruct = &autogenerate.CliStruct{
-		OwnerRepo: payloadData.GithubOrganization + "/" + payloadData.GithubRepository,
-		Token:     token,
-		TargetRef: payloadData.BaseBranch,
-	}
-	f, err := autogenerate.Detect(cliStruct)
-	if err != nil {
 		return nil, err
 	}
-	fmt.Println("what is the f value", f)
-	marshelledData, err := json.Marshal(f)
-	if err != nil {
-		return nil, err
+	tektontree.Files().ForEach(func(f *object.File) error {
+		fmt.Println("goin in this")
+		if strings.HasSuffix(f.Name, "yaml") {
+			filecontent, err := f.Contents()
+			fmt.Println("i see this errooror", err)
+			if err != nil {
+				return err
+			}
+			var p v1.PipelineRun
+			err = yaml.Unmarshal([]byte(filecontent), &p)
+			fmt.Println("I think erroror is herererre", err)
+			if err != nil {
+				return err
+			}
+			prs = append(prs, &p)
+		}
+		return nil
+	})
+	for _, pr := range prs {
+		pr.Name = "test-pac-interceptor-" + pr.Name
 	}
-	var prData *v1.PipelineRun
-	json.Unmarshal(marshelledData, prData)
-	prs = append(prs, prData)
 	return prs, nil
+	
 }

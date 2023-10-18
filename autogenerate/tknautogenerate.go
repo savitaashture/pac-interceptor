@@ -69,6 +69,7 @@ type Config struct {
 }
 
 func (ag *AutoGenerate) New(filename string) error {
+	fmt.Println("filenamefilenameis", filename)
 	if _, err := os.Stat(filename); err != nil {
 		return fmt.Errorf("file %s not found", filename)
 	}
