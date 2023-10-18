@@ -21,6 +21,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/cavaliercoder/grab"
 	"github.com/google/go-github/v55/github"
 	gh "github.com/google/go-github/v55/github"
 	"gopkg.in/yaml.v2"
@@ -191,8 +192,15 @@ func Detect(cli *CliStruct) (string, error) {
 		return "", err
 	}
 
+	resp1, err := grab.Get(".", "https://github.com/savitaashture/pac-interceptor/blob/main/tknautogenerate.yaml")
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println("Download saved to", resp1.Filename)
+
 	ag := &AutoGenerate{ghc: ghC, owner: ownerRepo[0], repo: ownerRepo[1], cli: cli}
-	if err := ag.New("tknautogenerate.yaml"); err != nil {
+	if err := ag.New(resp1.Filename); err != nil {
 		return "", err
 	}
 

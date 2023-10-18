@@ -3,6 +3,7 @@ module github.com/savitaashture/pac-interceptor
 go 1.19
 
 require (
+	github.com/cavaliercoder/grab v1.0.0
 	github.com/go-git/go-git/v5 v5.8.1
 	github.com/google/go-github/v55 v55.0.0
 	github.com/tektoncd/pipeline v0.51.0
@@ -23,6 +24,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/djherbis/times v1.5.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.10.2 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect

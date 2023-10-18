@@ -40,6 +40,9 @@ github.com/beorn7/perks/quantile
 # github.com/blendle/zapdriver v1.3.1
 ## explicit; go 1.12
 github.com/blendle/zapdriver
+# github.com/cavaliercoder/grab v1.0.0
+## explicit
+github.com/cavaliercoder/grab
 # github.com/census-instrumentation/opencensus-proto v0.4.1
 ## explicit; go 1.18
 github.com/census-instrumentation/opencensus-proto/gen-go/agent/common/v1
@@ -68,6 +71,8 @@ github.com/cloudflare/circl/sign/ed448
 # github.com/davecgh/go-spew v1.1.1
 ## explicit
 github.com/davecgh/go-spew/spew
+# github.com/djherbis/times v1.5.0
+## explicit; go 1.16
 # github.com/emicklei/go-restful/v3 v3.10.2
 ## explicit; go 1.13
 github.com/emicklei/go-restful/v3
