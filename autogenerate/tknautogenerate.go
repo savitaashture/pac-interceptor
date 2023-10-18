@@ -199,7 +199,14 @@ func Detect(cli *CliStruct) (string, error) {
 	//
 	//fmt.Println("Download saved to", resp1.Filename)
 
-	err = ioutil.WriteFile("tknautogenerate.yaml", []byte(`go:
+	file, err := os.Create("/tmp/tknautogenerate.yaml")
+	if err != nil {
+		fmt.Println("Error creating file:", err)
+	}
+	defer file.Close()
+
+	content := []byte(`
+go:
   tasks:
     - name: golangci-lint
       params:
@@ -235,14 +242,34 @@ containerbuild:
       params:
       - name: IMAGE
         value: "image-registry.openshift-image-registry.svc:5000/$(context.pipelineRun.namespace)/$(context.pipelineRun.name)"
-`), 0777) //create a new file
+`)
+	_, err = file.WriteString(string(content))
 	if err != nil {
-		fmt.Println("filewririirir", err)
+		fmt.Println("Error writing to file:", err)
 	}
-	fmt.Println("File is created successfully.") //print the success on the console
+
+	// Read the content from the file
+	data, err := ioutil.ReadFile("/tmp/tknautogenerate.yaml")
+	if err != nil {
+		fmt.Println("Error reading file:", err)
+	}
+
+	// Print the content
+	fmt.Println("File Content:")
+	fmt.Println(string(data))
+
+	files, err := ioutil.ReadDir("/tmp")
+	if err != nil {
+		fmt.Println("Error listing files:", err)
+	}
+
+	fmt.Println("Files in the current directory:")
+	for _, file := range files {
+		fmt.Println(file.Name())
+	}
 
 	ag := &AutoGenerate{ghc: ghC, owner: ownerRepo[0], repo: ownerRepo[1], cli: cli}
-	if err := ag.New("tknautogenerate.yaml"); err != nil {
+	if err := ag.New("/tmp/tknautogenerate.yaml"); err != nil {
 		return "", err
 	}
 

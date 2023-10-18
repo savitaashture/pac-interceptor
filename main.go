@@ -218,13 +218,19 @@ func clone(payloadData structs.Data, token string) ([]*v1.PipelineRun, error) {
 				return nil, err
 			}
 			fmt.Println("what is the f value", f)
-			marshelledData, err := json.Marshal(f)
+			//marshelledData, err := json.Marshal(f)
+			//fmt.Println("any erorororor hererer", err)
+			//if err != nil {
+			//	return nil, err
+			//}
+			var p v1.PipelineRun
+			err = json.Unmarshal([]byte(f), &p)
+			fmt.Println("unmatrshal errororor is", err)
+			fmt.Println("prDataprData", p)
 			if err != nil {
 				return nil, err
 			}
-			var prData *v1.PipelineRun
-			json.Unmarshal(marshelledData, prData)
-			prs = append(prs, prData)
+			prs = append(prs, &p)
 			return prs, nil
 		}
 		return nil, err
@@ -251,5 +257,5 @@ func clone(payloadData structs.Data, token string) ([]*v1.PipelineRun, error) {
 		pr.Name = "test-pac-interceptor-" + pr.Name
 	}
 	return prs, nil
-	
+
 }
