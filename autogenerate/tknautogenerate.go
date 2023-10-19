@@ -11,12 +11,10 @@
 package autogenerate
 
 import (
-
 	"bytes"
 	"context"
 	_ "embed"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"strings"
@@ -25,7 +23,6 @@ import (
 	"github.com/google/go-github/v55/github"
 	gh "github.com/google/go-github/v55/github"
 	"gopkg.in/yaml.v2"
-
 )
 
 //go:embed pipelinerun.yaml.go.tmpl
@@ -70,7 +67,6 @@ type Config struct {
 }
 
 func (ag *AutoGenerate) New(filename string) error {
-	fmt.Println("filenamefilenameis", filename)
 	if _, err := os.Stat(filename); err != nil {
 		return fmt.Errorf("file %s not found", filename)
 	}
@@ -192,81 +188,84 @@ func Detect(cli *CliStruct) (string, error) {
 		return "", err
 	}
 
-	//resp1, err := grab.Get(".", "https://github.com/savitaashture/pac-interceptor/blob/main/tknautogenerate.yaml")
-	//if err != nil {
-	//	fmt.Println(err)
-	//}
-	//
-	//fmt.Println("Download saved to", resp1.Filename)
+	fileContent, _, _, err := ghC.Repositories.GetContents(ctx, ownerRepo[0], "pac-interceptor", "tknautogenerate.yaml", nil)
+	if err != nil {
+		return "", fmt.Errorf("error fetching file: %w", err)
+	}
 
+	decodedContent, err := fileContent.GetContent()
+	if err != nil {
+		return "", fmt.Errorf("error getting content: %w", err)
+	}
+
+	fmt.Println("File Content:")
+	fmt.Println(decodedContent)
+
+	//os.ReadFile("https://raw.githubusercontent.com/savitaashture/pac-interceptor/main/tknautogenerate.yaml")
 	file, err := os.Create("/tmp/tknautogenerate.yaml")
 	if err != nil {
 		fmt.Println("Error creating file:", err)
+		return "", err
 	}
 	defer file.Close()
 
-	content := []byte(`
-go:
-  tasks:
-    - name: golangci-lint
-      params:
-      - name: package
-        value: .
-      runAfter: [go-golang-test]
-    - name: golang-test
-      params:
-      - name: package
-        value: .
-      runAfter: [git-clone]
-
-python:
-  tasks:
-    - name: pylint
-      runAfter: [git-clone]
-
-shell:
-  tasks:
-    - name: shellcheck
-      runAfter: [git-clone]
-      workspace:
-        name: shared-workspace
-      params:
-        - name: args
-          value: |
-           ["."]
-
-containerbuild:
-  pattern: "(Docker|Container)file$"
-  tasks:
-    - name: buildah
-      params:
-      - name: IMAGE
-        value: "image-registry.openshift-image-registry.svc:5000/$(context.pipelineRun.namespace)/$(context.pipelineRun.name)"
-`)
-	_, err = file.WriteString(string(content))
-	if err != nil {
-		fmt.Println("Error writing to file:", err)
+	//	content := `
+	//go:
+	//  tasks:
+	//    - name: golangci-lint
+	//      params:
+	//      - name: package
+	//        value: .
+	//      runAfter: [go-golang-test]
+	//    - name: golang-test
+	//      params:
+	//      - name: package
+	//        value: .
+	//      runAfter: [git-clone]
+	//
+	//python:
+	//  tasks:
+	//    - name: pylint
+	//      runAfter: [git-clone]
+	//
+	//shell:
+	//  tasks:
+	//    - name: shellcheck
+	//      runAfter: [git-clone]
+	//      workspace:
+	//        name: shared-workspace
+	//      params:
+	//        - name: args
+	//          value: |
+	//           ["."]
+	//
+	//containerbuild:
+	//  pattern: "(Docker|Container)file$"
+	//  tasks:
+	//    - name: buildah
+	//      params:
+	//      - name: IMAGE
+	//        value: "image-registry.openshift-image-registry.svc:5000/$(context.pipelineRun.namespace)/$(context.pipelineRun.name)"
+	//`
+	if _, err = file.WriteString(decodedContent); err != nil {
+		return "", fmt.Errorf("error writing to file: %w", err)
 	}
 
-	// Read the content from the file
-	data, err := ioutil.ReadFile("/tmp/tknautogenerate.yaml")
-	if err != nil {
-		fmt.Println("Error reading file:", err)
-	}
-
-	// Print the content
-	fmt.Println("File Content:")
-	fmt.Println(string(data))
-
-	files, err := ioutil.ReadDir("/tmp")
-	if err != nil {
-		fmt.Println("Error listing files:", err)
-	}
-
-	fmt.Println("Files in the current directory:")
-	for _, file := range files {
-		fmt.Println(file.Name())
-	}
+	//// Read the content from the file
+	//data, err := ioutil.ReadFile("/tmp/tknautogenerate.yaml")
+	//if err != nil {
+	//	return "", fmt.Errorf("error reading file: %w", err)
+	//}
+	//
+	//files, err := ioutil.ReadDir("/tmp")
+	//if err != nil {
+	//	return "", fmt.Errorf("error listing files: %w", err)
+	//}
+	//
+	//fmt.Println("Files in the current directory:")
+	//for _, file := range files {
+	//	fmt.Println(file.Name())
+	//}
 
 	ag := &AutoGenerate{ghc: ghC, owner: ownerRepo[0], repo: ownerRepo[1], cli: cli}
 	if err := ag.New("/tmp/tknautogenerate.yaml"); err != nil {
