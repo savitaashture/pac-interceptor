@@ -1,3 +1,4 @@
+---
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
@@ -50,7 +51,6 @@ spec:
       - name: git-clone
         taskRef:
           name: git-clone
-          kind: ClusterTask
         workspaces:
           - name: output
             workspace: source

@@ -13,12 +13,9 @@ import (
 	githttp "github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/savitaashture/pac-interceptor/autogenerate"
 	"github.com/savitaashture/pac-interceptor/structs"
-	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	git "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/storage/memory"
-	"sigs.k8s.io/yaml"
 )
 
 func main() {
@@ -67,6 +64,7 @@ func handleSuccess(w *http.ResponseWriter, request structs.PacRequest) {
 		handleError(w, http.StatusInternalServerError, "Internal Server Error", "Error cloning", err)
 		return
 	}
+	fmt.Println("PPPPPPPPPPPPPPPP", pipelinerun)
 	response.PipelineRuns = pipelinerun
 	responseMarshalled, err := json.Marshal(response)
 	if err != nil {
@@ -98,8 +96,9 @@ func decodeFromBase64(v interface{}, enc string) error {
 	return json.NewDecoder(base64.NewDecoder(base64.StdEncoding, strings.NewReader(enc))).Decode(v)
 }
 
-func clone(payloadData structs.Data, token string) ([]*v1.PipelineRun, error) {
-	fmt.Println("payloadData", payloadData.GithubOrganization, "***************", payloadData.GithubRepository)
+// func clone(payloadData structs.Data, token string) ([]*v1.PipelineRun, error) {
+func clone(payloadData structs.Data, token string) (string, error) {
+	fmt.Println("payloadData", payloadData.GithubOrganization, "***************", payloadData.GithubRepository, "eveveveve", payloadData.EventType)
 	repo, err := git.Clone(memory.NewStorage(), nil, &git.CloneOptions{
 		URL: fmt.Sprintf("https://github.com/%s/%s", payloadData.GithubOrganization, payloadData.GithubRepository),
 		Auth: &githttp.BasicAuth{
@@ -109,29 +108,36 @@ func clone(payloadData structs.Data, token string) ([]*v1.PipelineRun, error) {
 		ReferenceName: plumbing.NewBranchReferenceName(payloadData.HeadBranch),
 		Progress:      os.Stdout,
 	})
+	fmt.Println("erorororor in clone", err)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	ref, err := repo.Head()
+	fmt.Println("erorororor in head", err)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	// ... retrieving the commit object
 	commit, err := repo.CommitObject(ref.Hash())
+	fmt.Println("erorororor in hash", err)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	tree, err := commit.Tree()
+	fmt.Println("erorororor in tree", err)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	var prs []*v1.PipelineRun
-	var p v1.PipelineRun
-	tektontree, err := tree.Tree(".tekton")
+	//var prs []*v1.PipelineRun
+	//var p v1.PipelineRun
+
+	_, err = tree.Tree(".tekton")
+	//tektontree, err := tree.Tree(".tekton")
+	fmt.Println("erorororor in get tekton tree", err)
 	if err != nil {
 		if strings.Contains(err.Error(), "directory not found") {
 			// call autogenerate library
@@ -142,31 +148,40 @@ func clone(payloadData structs.Data, token string) ([]*v1.PipelineRun, error) {
 			}
 			f, err := autogenerate.Detect(cliStruct)
 			if err != nil {
-				return nil, err
+				return "", err
 			}
-			if err = yaml.Unmarshal([]byte(f), &p); err != nil {
-				return nil, err
-			}
-			prs = append(prs, &p)
-			return prs, nil
+			//if err = yaml.Unmarshal([]byte(f), &p); err != nil {
+			//	return nil, err
+			//}
+			//prs = append(prs, &p)
+			//return prs, nil
+			fmt.Println("value o ffff", f)
+			return f, nil
 		}
-		return nil, err
+		return "", err
 	}
-	tektontree.Files().ForEach(func(f *object.File) error {
-		if strings.HasSuffix(f.Name, "yaml") {
-			filecontent, err := f.Contents()
-			if err != nil {
-				return err
-			}
-			if err = yaml.Unmarshal([]byte(filecontent), &p); err != nil {
-				return err
-			}
-			prs = append(prs, &p)
-		}
-		return nil
-	})
-	for _, pr := range prs {
-		pr.Name = "test-pac-interceptor-" + pr.Name
-	}
-	return prs, nil
+
+	//var finaldata string
+	//tektontree.Files().ForEach(func(f *object.File) error {
+	//	if strings.HasSuffix(f.Name, "yaml") || strings.HasSuffix(f.Name, "yml") {
+	//		filecontent, err := f.Contents()
+	//		if err != nil {
+	//			return err
+	//		}
+	//		if !strings.HasPrefix(filecontent, "---") {
+	//			finaldata += "---"
+	//		}
+	//		finaldata += "\n" + filecontent + "\n"
+	//		//if err = yaml.Unmarshal([]byte(filecontent), &p); err != nil {
+	//		//	return err
+	//		//}
+	//		//prs = append(prs, &p)
+	//	}
+	//	return nil
+	//})
+	////for _, pr := range prs {
+	////	pr.Name = "test-pac-interceptor-" + pr.Name
+	////}
+	//return finaldata, nil
+	return fmt.Sprintf("https://github.com/%s/%s have .tekton directory", payloadData.GithubOrganization, payloadData.GithubRepository), nil
 }

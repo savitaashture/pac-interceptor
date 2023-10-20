@@ -1,7 +1,5 @@
 package structs
 
-import v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
-
 type Data struct {
 	EventType  string `json:"eventType,omitempty"`
 	BaseBranch string `json:"baseBranch,omitempty"`
@@ -35,5 +33,6 @@ type PacRequest struct {
 }
 
 type PacResponse struct {
-	PipelineRuns []*v1.PipelineRun `json:"pipelineruns"`
+	//PipelineRuns []*v1.PipelineRun `json:"pipelineruns"`
+	PipelineRuns string `json:"pipelineruns"`
 }
