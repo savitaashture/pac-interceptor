@@ -64,7 +64,6 @@ func handleSuccess(w *http.ResponseWriter, request structs.PacRequest) {
 		handleError(w, http.StatusInternalServerError, "Internal Server Error", "Error cloning", err)
 		return
 	}
-	fmt.Println("PPPPPPPPPPPPPPPP", pipelinerun)
 	response.PipelineRuns = pipelinerun
 	responseMarshalled, err := json.Marshal(response)
 	if err != nil {
@@ -85,7 +84,6 @@ func handleError(w *http.ResponseWriter, code int, responseText string, logMessa
 	if err != nil {
 		errorMessage = err.Error()
 	}
-
 	log.Println(logMessage, errorMessage)
 	writer := *w
 	writer.WriteHeader(code)
@@ -98,51 +96,44 @@ func decodeFromBase64(v interface{}, enc string) error {
 
 // func clone(payloadData structs.Data, token string) ([]*v1.PipelineRun, error) {
 func clone(payloadData structs.Data, token string) (string, error) {
-	fmt.Println("payloadData", payloadData.GithubOrganization, "***************", payloadData.GithubRepository, "eveveveve", payloadData.EventType)
-	repo, err := git.Clone(memory.NewStorage(), nil, &git.CloneOptions{
-		URL: fmt.Sprintf("https://github.com/%s/%s", payloadData.GithubOrganization, payloadData.GithubRepository),
+	cloneOptions := &git.CloneOptions{
+		URL: payloadData.URL,
 		Auth: &githttp.BasicAuth{
-			Username: "abc123", // yes, this can be anything except an empty string
+			Username: "abcd", // yes, this can be anything except an empty string
 			Password: token,
 		},
 		ReferenceName: plumbing.NewBranchReferenceName(payloadData.HeadBranch),
 		Progress:      os.Stdout,
-	})
-	fmt.Println("erorororor in clone", err)
+		SingleBranch:  true,
+		Depth:         1,
+	}
+
+	repo, err := git.Clone(memory.NewStorage(), nil, cloneOptions)
 	if err != nil {
 		return "", err
 	}
 
 	ref, err := repo.Head()
-	fmt.Println("erorororor in head", err)
 	if err != nil {
 		return "", err
 	}
 
 	// ... retrieving the commit object
 	commit, err := repo.CommitObject(ref.Hash())
-	fmt.Println("erorororor in hash", err)
 	if err != nil {
 		return "", err
 	}
 
 	tree, err := commit.Tree()
-	fmt.Println("erorororor in tree", err)
 	if err != nil {
 		return "", err
 	}
 
-	//var prs []*v1.PipelineRun
-	//var p v1.PipelineRun
-
-	_, err = tree.Tree(".tekton")
-	//tektontree, err := tree.Tree(".tekton")
-	fmt.Println("erorororor in get tekton tree", err)
-	if err != nil {
+	if _, err = tree.Tree(".tekton"); err != nil {
 		if strings.Contains(err.Error(), "directory not found") {
 			// call autogenerate library
 			var cliStruct = &autogenerate.CliStruct{
-				OwnerRepo: payloadData.GithubOrganization + "/" + payloadData.GithubRepository,
+				OwnerRepo: payloadData.Organization + "/" + payloadData.Repository,
 				Token:     token,
 				TargetRef: payloadData.BaseBranch,
 			}
@@ -150,38 +141,9 @@ func clone(payloadData structs.Data, token string) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			//if err = yaml.Unmarshal([]byte(f), &p); err != nil {
-			//	return nil, err
-			//}
-			//prs = append(prs, &p)
-			//return prs, nil
-			fmt.Println("value o ffff", f)
 			return f, nil
 		}
 		return "", err
 	}
-
-	//var finaldata string
-	//tektontree.Files().ForEach(func(f *object.File) error {
-	//	if strings.HasSuffix(f.Name, "yaml") || strings.HasSuffix(f.Name, "yml") {
-	//		filecontent, err := f.Contents()
-	//		if err != nil {
-	//			return err
-	//		}
-	//		if !strings.HasPrefix(filecontent, "---") {
-	//			finaldata += "---"
-	//		}
-	//		finaldata += "\n" + filecontent + "\n"
-	//		//if err = yaml.Unmarshal([]byte(filecontent), &p); err != nil {
-	//		//	return err
-	//		//}
-	//		//prs = append(prs, &p)
-	//	}
-	//	return nil
-	//})
-	////for _, pr := range prs {
-	////	pr.Name = "test-pac-interceptor-" + pr.Name
-	////}
-	//return finaldata, nil
-	return fmt.Sprintf("https://github.com/%s/%s have .tekton directory", payloadData.GithubOrganization, payloadData.GithubRepository), nil
+	return fmt.Sprintf("https://github.com/%s/%s have .tekton directory", payloadData.Organization, payloadData.Repository), nil
 }

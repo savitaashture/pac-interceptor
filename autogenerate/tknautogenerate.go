@@ -198,74 +198,15 @@ func Detect(cli *CliStruct) (string, error) {
 		return "", fmt.Errorf("error getting content: %w", err)
 	}
 
-	fmt.Println("File Content:")
-	fmt.Println(decodedContent)
-
-	//os.ReadFile("https://raw.githubusercontent.com/savitaashture/pac-interceptor/main/tknautogenerate.yaml")
 	file, err := os.Create("/tmp/tknautogenerate.yaml")
 	if err != nil {
-		fmt.Println("Error creating file:", err)
 		return "", err
 	}
 	defer file.Close()
 
-	//	content := `
-	//go:
-	//  tasks:
-	//    - name: golangci-lint
-	//      params:
-	//      - name: package
-	//        value: .
-	//      runAfter: [go-golang-test]
-	//    - name: golang-test
-	//      params:
-	//      - name: package
-	//        value: .
-	//      runAfter: [git-clone]
-	//
-	//python:
-	//  tasks:
-	//    - name: pylint
-	//      runAfter: [git-clone]
-	//
-	//shell:
-	//  tasks:
-	//    - name: shellcheck
-	//      runAfter: [git-clone]
-	//      workspace:
-	//        name: shared-workspace
-	//      params:
-	//        - name: args
-	//          value: |
-	//           ["."]
-	//
-	//containerbuild:
-	//  pattern: "(Docker|Container)file$"
-	//  tasks:
-	//    - name: buildah
-	//      params:
-	//      - name: IMAGE
-	//        value: "image-registry.openshift-image-registry.svc:5000/$(context.pipelineRun.namespace)/$(context.pipelineRun.name)"
-	//`
 	if _, err = file.WriteString(decodedContent); err != nil {
 		return "", fmt.Errorf("error writing to file: %w", err)
 	}
-
-	//// Read the content from the file
-	//data, err := ioutil.ReadFile("/tmp/tknautogenerate.yaml")
-	//if err != nil {
-	//	return "", fmt.Errorf("error reading file: %w", err)
-	//}
-	//
-	//files, err := ioutil.ReadDir("/tmp")
-	//if err != nil {
-	//	return "", fmt.Errorf("error listing files: %w", err)
-	//}
-	//
-	//fmt.Println("Files in the current directory:")
-	//for _, file := range files {
-	//	fmt.Println(file.Name())
-	//}
 
 	ag := &AutoGenerate{ghc: ghC, owner: ownerRepo[0], repo: ownerRepo[1], cli: cli}
 	if err := ag.New("/tmp/tknautogenerate.yaml"); err != nil {
