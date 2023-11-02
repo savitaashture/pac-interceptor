@@ -11,8 +11,8 @@ import (
 	"strings"
 
 	githttp "github.com/go-git/go-git/v5/plumbing/transport/http"
-	"github.com/savitaashture/pac-interceptor/autogenerate"
 	"github.com/savitaashture/pac-interceptor/structs"
+	ag "github.com/savitaashture/tkn-autogenerate/pkg/tknautogenerate"
 	git "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/storage/memory"
@@ -132,12 +132,12 @@ func clone(payloadData structs.Data, token string) (string, error) {
 	if _, err = tree.Tree(".tekton"); err != nil {
 		if strings.Contains(err.Error(), "directory not found") {
 			// call autogenerate library
-			var cliStruct = &autogenerate.CliStruct{
+			var cliStruct = &ag.CliStruct{
 				OwnerRepo: payloadData.Organization + "/" + payloadData.Repository,
 				Token:     token,
 				TargetRef: payloadData.BaseBranch,
 			}
-			f, err := autogenerate.Detect(cliStruct)
+			f, err := ag.Detect(cliStruct)
 			if err != nil {
 				return "", err
 			}
