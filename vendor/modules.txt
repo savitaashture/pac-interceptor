@@ -28,6 +28,9 @@ github.com/ProtonMail/go-crypto/openpgp/s2k
 # github.com/acomagu/bufpipe v1.0.4
 ## explicit; go 1.12
 github.com/acomagu/bufpipe
+# github.com/chmouel/tkn-autogenerate v0.0.0-20231102154610-e2866555a847
+## explicit; go 1.20
+github.com/chmouel/tkn-autogenerate/pkg/tknautogenerate
 # github.com/cloudflare/circl v1.3.3
 ## explicit; go 1.19
 github.com/cloudflare/circl/dh/x25519
@@ -110,9 +113,6 @@ github.com/pjbgf/sha1cd/internal
 github.com/pjbgf/sha1cd/ubc
 # github.com/rogpeppe/go-internal v1.10.0
 ## explicit; go 1.19
-# github.com/savitaashture/tkn-autogenerate v0.0.0-20231101140439-32303652961f
-## explicit; go 1.20
-github.com/savitaashture/tkn-autogenerate/pkg/tknautogenerate
 # github.com/sergi/go-diff v1.2.0
 ## explicit; go 1.12
 github.com/sergi/go-diff/diffmatchpatch
