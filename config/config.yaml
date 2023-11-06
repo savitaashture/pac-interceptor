@@ -31,7 +31,8 @@ metadata:
   name: pac-interceptor
 spec:
   ports:
-    - name: pac-interceptor
+    - name: http-listener
+      protocol: TCP
       port: 8800
       targetPort: 8800
   selector:
